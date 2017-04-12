@@ -3,7 +3,7 @@ package ru.otus.l21;
 import java.lang.management.ManagementFactory;
 
 /**
- * Created by tully.
+ * Created by Norgant.
  */
 //VM options -Xmx1024m -Xms1024m
 public class Main {
