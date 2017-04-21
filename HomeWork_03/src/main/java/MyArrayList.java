@@ -1,13 +1,9 @@
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 
 /**
  * Created by norgant on 18.04.17.
  */
 public class MyArrayList<T> implements List<T> {
-    private boolean empty = true;
     private int currentIndex = 0;
     private T currentArray[];
 
@@ -33,6 +29,7 @@ public class MyArrayList<T> implements List<T> {
      * @return the number of elements in this list
      */
     public int size() {
+        if (currentIndex > Integer.MAX_VALUE) return Integer.MAX_VALUE;
         return currentIndex;
     }
 
@@ -43,7 +40,7 @@ public class MyArrayList<T> implements List<T> {
      * @return <tt>true</tt> if this list contains no elements
      */
     public boolean isEmpty() {
-        return empty;
+        return currentIndex == 0;
     }
 
     //Tested
@@ -103,10 +100,9 @@ public class MyArrayList<T> implements List<T> {
     public Object[] toArray() {
         int arraySize = size();
         Object[] result = new Object[arraySize];
-        int i = 0;
-        while (currentArray[i] != null && i < arraySize) {
+
+        for (int i = 0; i < arraySize; i++) {
             result[i] = currentArray[i];
-            i++;
         }
         return result;
     }
@@ -166,7 +162,7 @@ public class MyArrayList<T> implements List<T> {
      * classes should clearly specify in their documentation any restrictions
      * on what elements may be added.
      *
-     * @param t element to be appended to this list
+     * @param t element to be appended to this list, not NULL
      * @return <tt>true</tt> (as specified by {@link Collection#add})
      * @throws UnsupportedOperationException if the <tt>add</tt> operation
      *                                       is not supported by this list
@@ -178,11 +174,13 @@ public class MyArrayList<T> implements List<T> {
      *                                       prevents it from being added to this list
      */
     public boolean add(T t) {
+        if (t == null) {
+            throw new NullPointerException();
+        }
         currentArray[currentIndex] = t;
         if (++currentIndex == currentArray.length) {
             increaseCurrentArray();
         }
-        empty = false;
         return true;
     }
 
@@ -334,12 +332,15 @@ public class MyArrayList<T> implements List<T> {
      * @see #contains(Object)
      */
     public boolean removeAll(Collection<?> c) {
-        for (Object o : c) {
-            while (contains(o)) {
-                remove(o);
+        for (int i = 0; i < currentIndex; ) {
+            if (c.contains(currentArray[i])){
+                remove(i);
+            } else {
+                i++;
             }
         }
-        return false;
+
+        return true;
     }
 
     //Tested
@@ -371,7 +372,7 @@ public class MyArrayList<T> implements List<T> {
                 i++;
             }
         }
-        return false;
+        return true;
     }
 
     //Tested
@@ -384,7 +385,6 @@ public class MyArrayList<T> implements List<T> {
      */
     public void clear() {
         currentArray = (T[]) new Object[currentArray.length];
-        empty = true;
         currentIndex = 0;
     }
 
@@ -477,9 +477,6 @@ public class MyArrayList<T> implements List<T> {
             currentArray[i - 1] = currentArray[i];
         }
         currentIndex--;
-        if (currentIndex == 0) {
-            empty = true;
-        }
         return result;
     }
 
@@ -627,236 +624,233 @@ public class MyArrayList<T> implements List<T> {
         }
 
     }
-}
 
-class MyIterator<E> implements Iterator<E>{
-    MyArrayList<E> myList;
-    int lastUsedPosition;
+    class MyIterator<E> implements Iterator<E>{
+        MyArrayList<E> myList;
+        int lastUsedPosition;
 
-    public MyIterator(MyArrayList<E> myList) {
-        this.myList = myList;
-        lastUsedPosition = 0;
-    }
+        public MyIterator(MyArrayList<E> myList) {
+            this.myList = myList;
+            lastUsedPosition = 0;
+        }
 
-    /**
-     * Returns {@code true} if the iteration has more elements.
-     * (In other words, returns {@code true} if {@link #next} would
-     * return an element rather than throwing an exception.)
-     *
-     * @return {@code true} if the iteration has more elements
-     */
-    @Override
-    public boolean hasNext() {
-        if (lastUsedPosition < myList.size()) {
-            return true;
-        } else {
-            return false;
+        /**
+         * Returns {@code true} if the iteration has more elements.
+         * (In other words, returns {@code true} if {@link #next} would
+         * return an element rather than throwing an exception.)
+         *
+         * @return {@code true} if the iteration has more elements
+         */
+        @Override
+        public boolean hasNext() {
+            if (lastUsedPosition < myList.size()) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        /**
+         * Returns the next element in the iteration.
+         *
+         * @return the next element in the iteration
+         * @throws //NoSuchElementException if the iteration has no more elements
+         */
+        @Override
+        public E next() {
+            return myList.get(lastUsedPosition++);
         }
     }
 
-    /**
-     * Returns the next element in the iteration.
-     *
-     * @return the next element in the iteration
-     * @throws //NoSuchElementException if the iteration has no more elements
-     */
-    @Override
-    public E next() {
-        return myList.get(lastUsedPosition++);
-    }
-}
+    class MyListIterator<E> implements ListIterator<E> {
+        boolean started = false;
+        MyArrayList<E> myList;
+        int lastUsedPosition;
 
-class MyListIterator<E> implements ListIterator<E> {
-    boolean started = false;
-    MyArrayList<E> myList;
-    int lastUsedPosition;
-
-    public MyListIterator(MyArrayList<E> myList) {
-        this.myList = myList;
-        lastUsedPosition = 0;
-    }
-
-    public MyListIterator(MyArrayList<E> myList, int index) {
-        this.myList = myList;
-        lastUsedPosition = index;
-    }
-
-    /**
-     * Returns {@code true} if this list iterator has more elements when
-     * traversing the list in the forward direction. (In other words,
-     * returns {@code true} if {@link #next} would return an element rather
-     * than throwing an exception.)
-     *
-     * @return {@code true} if the list iterator has more elements when
-     * traversing the list in the forward direction
-     */
-    @Override
-    public boolean hasNext() {
-        if (lastUsedPosition + 1 == myList.size()) return false;
-        return true;
-    }
-
-    /**
-     * Returns the next element in the list and advances the cursor position.
-     * This method may be called repeatedly to iterate through the list,
-     * or intermixed with calls to {@link #previous} to go back and forth.
-     * (Note that alternating calls to {@code next} and {@code previous}
-     * will return the same element repeatedly.)
-     *
-     * @return the next element in the list
-     * @throws //NoSuchElementException if the iteration has no next element
-     */
-    @Override
-    public E next() {
-        if (!started) {
-            started = true;
-            return myList.get(lastUsedPosition);
+        public MyListIterator(MyArrayList<E> myList) {
+            this.myList = myList;
+            lastUsedPosition = 0;
         }
-        return myList.get(++lastUsedPosition);
-    }
 
-    /**
-     * Returns {@code true} if this list iterator has more elements when
-     * traversing the list in the reverse direction.  (In other words,
-     * returns {@code true} if {@link #previous} would return an element
-     * rather than throwing an exception.)
-     *
-     * @return {@code true} if the list iterator has more elements when
-     * traversing the list in the reverse direction
-     */
-    @Override
-    public boolean hasPrevious() {
-        if (lastUsedPosition == 0) {
-            return false;
-        } else {
+        public MyListIterator(MyArrayList<E> myList, int index) {
+            this.myList = myList;
+            lastUsedPosition = index;
+        }
+
+        /**
+         * Returns {@code true} if this list iterator has more elements when
+         * traversing the list in the forward direction. (In other words,
+         * returns {@code true} if {@link #next} would return an element rather
+         * than throwing an exception.)
+         *
+         * @return {@code true} if the list iterator has more elements when
+         * traversing the list in the forward direction
+         */
+        @Override
+        public boolean hasNext() {
+            if (lastUsedPosition + 1 == myList.size()) return false;
             return true;
         }
-    }
 
-    /**
-     * Returns the previous element in the list and moves the cursor
-     * position backwards.  This method may be called repeatedly to
-     * iterate through the list backwards, or intermixed with calls to
-     * {@link #next} to go back and forth.  (Note that alternating calls
-     * to {@code next} and {@code previous} will return the same
-     * element repeatedly.)
-     *
-     * @return the previous element in the list
-     * @throws //NoSuchElementException if the iteration has no previous
-     *                                element
-     */
-    @Override
-    public E previous() {
-        E result;
-        if (started) {
-            lastUsedPosition--;
-            lastUsedPosition = lastUsedPosition - 1;
-        } else {
-            started = true;
+        /**
+         * Returns the next element in the list and advances the cursor position.
+         * This method may be called repeatedly to iterate through the list,
+         * or intermixed with calls to {@link #previous} to go back and forth.
+         * (Note that alternating calls to {@code next} and {@code previous}
+         * will return the same element repeatedly.)
+         *
+         * @return the next element in the list
+         * @throws //NoSuchElementException if the iteration has no next element
+         */
+        @Override
+        public E next() {
+            if (!started) {
+                started = true;
+                return myList.get(lastUsedPosition);
+            }
+            return myList.get(++lastUsedPosition);
         }
-        result = myList.get(lastUsedPosition);
-        return result;
-    }
 
-    /**
-     * Returns the index of the element that would be returned by a
-     * subsequent call to {@link #next}. (Returns list size if the list
-     * iterator is at the end of the list.)
-     *
-     * @return the index of the element that would be returned by a
-     * subsequent call to {@code next}, or list size if the list
-     * iterator is at the end of the list
-     */
-    @Override
-    public int nextIndex() {
-        return lastUsedPosition + 1;
-    }
-
-    /**
-     * Returns the index of the element that would be returned by a
-     * subsequent call to {@link #previous}. (Returns -1 if the list
-     * iterator is at the beginning of the list.)
-     *
-     * @return the index of the element that would be returned by a
-     * subsequent call to {@code previous}, or -1 if the list
-     * iterator is at the beginning of the list
-     */
-    @Override
-    public int previousIndex() {
-        return lastUsedPosition - 1;
-    }
-
-    /**
-     * Removes from the list the last element that was returned by {@link
-     * #next} or {@link #previous} (optional operation).  This call can
-     * only be made once per call to {@code next} or {@code previous}.
-     * It can be made only if {@link #add} has not been
-     * called after the last call to {@code next} or {@code previous}.
-     *
-     * @throws UnsupportedOperationException if the {@code remove}
-     *                                       operation is not supported by this list iterator
-     * @throws IllegalStateException         if neither {@code next} nor
-     *                                       {@code previous} have been called, or {@code remove} or
-     *                                       {@code add} have been called after the last call to
-     *                                       {@code next} or {@code previous}
-     */
-    @Override
-    public void remove() {
-        myList.remove(lastUsedPosition);
-        if (lastUsedPosition == myList.size()) lastUsedPosition--;
-    }
-
-    /**
-     * Replaces the last element returned by {@link #next} or
-     * {@link #previous} with the specified element (optional operation).
-     * This call can be made only if neither {@link #remove} nor {@link
-     * #add} have been called after the last call to {@code next} or
-     * {@code previous}.
-     *
-     * @param e the element with which to replace the last element returned by
-     *          {@code next} or {@code previous}
-     * @throws UnsupportedOperationException if the {@code set} operation
-     *                                       is not supported by this list iterator
-     * @throws ClassCastException            if the class of the specified element
-     *                                       prevents it from being added to this list
-     * @throws IllegalArgumentException      if some aspect of the specified
-     *                                       element prevents it from being added to this list
-     * @throws IllegalStateException         if neither {@code next} nor
-     *                                       {@code previous} have been called, or {@code remove} or
-     *                                       {@code add} have been called after the last call to
-     *                                       {@code next} or {@code previous}
-     */
-    @Override
-    public void set(E e) {
-        myList.set(lastUsedPosition, e);
-    }
-
-    /**
-     * Inserts the specified element into the list (optional operation).
-     * The element is inserted immediately before the element that
-     * would be returned by {@link #next}, if any, and after the element
-     * that would be returned by {@link #previous}, if any.  (If the
-     * list contains no elements, the new element becomes the sole element
-     * on the list.)  The new element is inserted before the implicit
-     * cursor: a subsequent call to {@code next} would be unaffected, and a
-     * subsequent call to {@code previous} would return the new element.
-     * (This call increases by one the value that would be returned by a
-     * call to {@code nextIndex} or {@code previousIndex}.)
-     *
-     * @param e the element to insert
-     * @throws UnsupportedOperationException if the {@code add} method is
-     *                                       not supported by this list iterator
-     * @throws ClassCastException            if the class of the specified element
-     *                                       prevents it from being added to this list
-     * @throws IllegalArgumentException      if some aspect of this element
-     *                                       prevents it from being added to this list
-     */
-    @Override
-    public void add(E e) {
-        if (!started) {
-            started = true;
+        /**
+         * Returns {@code true} if this list iterator has more elements when
+         * traversing the list in the reverse direction.  (In other words,
+         * returns {@code true} if {@link #previous} would return an element
+         * rather than throwing an exception.)
+         *
+         * @return {@code true} if the list iterator has more elements when
+         * traversing the list in the reverse direction
+         */
+        @Override
+        public boolean hasPrevious() {
+            return lastUsedPosition != 0;
         }
-        myList.add(nextIndex(), e);
-        lastUsedPosition++;
+
+        /**
+         * Returns the previous element in the list and moves the cursor
+         * position backwards.  This method may be called repeatedly to
+         * iterate through the list backwards, or intermixed with calls to
+         * {@link #next} to go back and forth.  (Note that alternating calls
+         * to {@code next} and {@code previous} will return the same
+         * element repeatedly.)
+         *
+         * @return the previous element in the list
+         * @throws //NoSuchElementException if the iteration has no previous
+         *                                element
+         */
+        @Override
+        public E previous() {
+            E result;
+            if (started) {
+                lastUsedPosition--;
+                lastUsedPosition = lastUsedPosition - 1;
+            } else {
+                started = true;
+            }
+            result = myList.get(lastUsedPosition);
+            return result;
+        }
+
+        /**
+         * Returns the index of the element that would be returned by a
+         * subsequent call to {@link #next}. (Returns list size if the list
+         * iterator is at the end of the list.)
+         *
+         * @return the index of the element that would be returned by a
+         * subsequent call to {@code next}, or list size if the list
+         * iterator is at the end of the list
+         */
+        @Override
+        public int nextIndex() {
+            return lastUsedPosition + 1;
+        }
+
+        /**
+         * Returns the index of the element that would be returned by a
+         * subsequent call to {@link #previous}. (Returns -1 if the list
+         * iterator is at the beginning of the list.)
+         *
+         * @return the index of the element that would be returned by a
+         * subsequent call to {@code previous}, or -1 if the list
+         * iterator is at the beginning of the list
+         */
+        @Override
+        public int previousIndex() {
+            return lastUsedPosition - 1;
+        }
+
+        /**
+         * Removes from the list the last element that was returned by {@link
+         * #next} or {@link #previous} (optional operation).  This call can
+         * only be made once per call to {@code next} or {@code previous}.
+         * It can be made only if {@link #add} has not been
+         * called after the last call to {@code next} or {@code previous}.
+         *
+         * @throws UnsupportedOperationException if the {@code remove}
+         *                                       operation is not supported by this list iterator
+         * @throws IllegalStateException         if neither {@code next} nor
+         *                                       {@code previous} have been called, or {@code remove} or
+         *                                       {@code add} have been called after the last call to
+         *                                       {@code next} or {@code previous}
+         */
+        @Override
+        public void remove() {
+            myList.remove(lastUsedPosition);
+            if (lastUsedPosition == myList.size()) lastUsedPosition--;
+        }
+
+        /**
+         * Replaces the last element returned by {@link #next} or
+         * {@link #previous} with the specified element (optional operation).
+         * This call can be made only if neither {@link #remove} nor {@link
+         * #add} have been called after the last call to {@code next} or
+         * {@code previous}.
+         *
+         * @param e the element with which to replace the last element returned by
+         *          {@code next} or {@code previous}
+         * @throws UnsupportedOperationException if the {@code set} operation
+         *                                       is not supported by this list iterator
+         * @throws ClassCastException            if the class of the specified element
+         *                                       prevents it from being added to this list
+         * @throws IllegalArgumentException      if some aspect of the specified
+         *                                       element prevents it from being added to this list
+         * @throws IllegalStateException         if neither {@code next} nor
+         *                                       {@code previous} have been called, or {@code remove} or
+         *                                       {@code add} have been called after the last call to
+         *                                       {@code next} or {@code previous}
+         */
+        @Override
+        public void set(E e) {
+            myList.set(lastUsedPosition, e);
+        }
+
+        /**
+         * Inserts the specified element into the list (optional operation).
+         * The element is inserted immediately before the element that
+         * would be returned by {@link #next}, if any, and after the element
+         * that would be returned by {@link #previous}, if any.  (If the
+         * list contains no elements, the new element becomes the sole element
+         * on the list.)  The new element is inserted before the implicit
+         * cursor: a subsequent call to {@code next} would be unaffected, and a
+         * subsequent call to {@code previous} would return the new element.
+         * (This call increases by one the value that would be returned by a
+         * call to {@code nextIndex} or {@code previousIndex}.)
+         *
+         * @param e the element to insert
+         * @throws UnsupportedOperationException if the {@code add} method is
+         *                                       not supported by this list iterator
+         * @throws ClassCastException            if the class of the specified element
+         *                                       prevents it from being added to this list
+         * @throws IllegalArgumentException      if some aspect of this element
+         *                                       prevents it from being added to this list
+         */
+        @Override
+        public void add(E e) {
+            if (!started) {
+                started = true;
+            }
+            myList.add(nextIndex(), e);
+            lastUsedPosition++;
+        }
     }
+
 }
